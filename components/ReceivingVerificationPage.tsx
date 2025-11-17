@@ -119,9 +119,9 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
     }));
   };
 
-  const incrementCount = (index: number) => {
+  const incrementCount = (index: number, amount: number = 1) => {
     const item = items[index];
-    const newQty = item.actualQty + 1;
+    const newQty = item.actualQty + amount;
     updateItem(index, { actualQty: newQty });
   };
 
@@ -129,6 +129,12 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
     const item = items[index];
     const newQty = Math.max(0, item.actualQty - 1);
     updateItem(index, { actualQty: newQty });
+  };
+
+  const setManualCount = (index: number, value: string) => {
+    const numValue = parseInt(value) || 0;
+    const validValue = Math.max(0, numValue);
+    updateItem(index, { actualQty: validValue });
   };
 
   const resetCount = (index: number) => {
@@ -333,31 +339,66 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
 
                         {/* Counting Buttons */}
                         {!item.verified && (
-                          <div className="grid grid-cols-3 gap-2 mb-3">
-                            {/* Big +1 Button */}
-                            <button
-                              onClick={() => incrementCount(index)}
-                              className="col-span-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-6 px-4 rounded-xl text-2xl shadow-lg transform active:scale-95 transition-all"
-                            >
-                              +1
-                            </button>
-
-                            {/* Side buttons */}
-                            <div className="flex flex-col gap-2">
+                          <>
+                            {/* Manual Input + Quick Increments */}
+                            <div className="grid grid-cols-5 gap-2 mb-2">
+                              {/* Manual Input */}
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.actualQty}
+                                onChange={(e) => setManualCount(index, e.target.value)}
+                                className="col-span-2 bg-slate-800 border-2 border-slate-600 text-white text-center text-xl font-bold rounded-lg px-2 py-1"
+                                placeholder="Type #"
+                              />
+                              {/* Quick Increment Buttons */}
                               <button
-                                onClick={() => decrementCount(index)}
-                                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg"
+                                onClick={() => incrementCount(index, 5)}
+                                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-lg transform active:scale-95 transition-all"
                               >
-                                -1
+                                +5
                               </button>
                               <button
-                                onClick={() => resetCount(index)}
-                                className="flex-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg"
+                                onClick={() => incrementCount(index, 10)}
+                                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-lg transform active:scale-95 transition-all"
                               >
-                                Reset
+                                +10
+                              </button>
+                              <button
+                                onClick={() => incrementCount(index, 50)}
+                                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-lg transform active:scale-95 transition-all"
+                              >
+                                +50
                               </button>
                             </div>
-                          </div>
+
+                            {/* Primary Counting Buttons */}
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                              {/* Big +1 Button */}
+                              <button
+                                onClick={() => incrementCount(index, 1)}
+                                className="col-span-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-6 px-4 rounded-xl text-2xl shadow-lg transform active:scale-95 transition-all"
+                              >
+                                +1
+                              </button>
+
+                              {/* Side buttons */}
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => decrementCount(index)}
+                                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg"
+                                >
+                                  -1
+                                </button>
+                                <button
+                                  onClick={() => resetCount(index)}
+                                  className="flex-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg"
+                                >
+                                  Reset
+                                </button>
+                              </div>
+                            </div>
+                          </>
                         )}
 
                         {/* Quick Action Buttons */}
