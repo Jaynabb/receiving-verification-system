@@ -75,11 +75,11 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
         allInvoiceItems = await analyzeInvoicePhoto(base64Image, inventory);
       }
 
-      // Convert to verification items
+      // Convert to verification items - START COUNTING AT ZERO
       const verificationItems: VerificationItem[] = allInvoiceItems.map(item => ({
         name: item.name,
         expectedQty: item.quantity || 0,
-        actualQty: item.quantity || 0,
+        actualQty: 0, // Start at zero - user taps +1 as they count
         unitPrice: item.unitPrice,
         verified: false,
         status: 'pending',
@@ -102,13 +102,16 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
       const updated = { ...item, ...updates };
 
       // Auto-determine status based on quantities
-      if (updated.verified && updates.actualQty !== undefined) {
+      if (updates.actualQty !== undefined) {
         if (updated.actualQty === updated.expectedQty) {
           updated.status = 'match';
+          updated.verified = true; // Auto-verify when count matches
         } else if (updated.actualQty < updated.expectedQty) {
           updated.status = 'shortage';
-        } else {
+        } else if (updated.actualQty > updated.expectedQty) {
           updated.status = 'overage';
+        } else {
+          updated.status = 'pending';
         }
       }
 
@@ -116,14 +119,25 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
     }));
   };
 
-  const verifyItem = (index: number) => {
-    updateItem(index, { verified: true });
+  const incrementCount = (index: number) => {
+    const item = items[index];
+    const newQty = item.actualQty + 1;
+    updateItem(index, { actualQty: newQty });
   };
 
-  const adjustQuantity = (index: number, delta: number) => {
+  const decrementCount = (index: number) => {
     const item = items[index];
-    const newQty = Math.max(0, item.actualQty + delta);
+    const newQty = Math.max(0, item.actualQty - 1);
     updateItem(index, { actualQty: newQty });
+  };
+
+  const resetCount = (index: number) => {
+    updateItem(index, { actualQty: 0, verified: false, status: 'pending' });
+  };
+
+  const finishCounting = (index: number) => {
+    const item = items[index];
+    updateItem(index, { verified: true });
   };
 
   const markAs = (index: number, status: VerificationItem['status']) => {
@@ -300,59 +314,77 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
                     <div className="flex-1">
                       <div className="font-medium text-white text-lg mb-2">{item.name}</div>
 
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="text-sm text-slate-400">
-                          Expected: <span className="font-bold text-white">{item.expectedQty}</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-slate-900/50 rounded-lg p-2">
-                          <button
-                            onClick={() => adjustQuantity(index, -1)}
-                            className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded text-white font-bold"
-                          >
-                            -
-                          </button>
-                          <div className="w-16 text-center">
-                            <div className="text-xs text-slate-400">Actual</div>
-                            <div className="text-lg font-bold text-white">{item.actualQty}</div>
+                      {/* Counting Interface */}
+                      <div className="mb-3">
+                        {/* Big Counter Display */}
+                        <div className="bg-slate-900/70 rounded-xl p-4 mb-3 text-center">
+                          <div className="text-sm text-slate-400 mb-1">Count Progress</div>
+                          <div className="text-4xl font-bold text-white">
+                            <span className={item.actualQty === item.expectedQty ? 'text-green-400' : 'text-blue-400'}>
+                              {item.actualQty}
+                            </span>
+                            <span className="text-slate-600"> / </span>
+                            <span className="text-slate-400">{item.expectedQty}</span>
                           </div>
-                          <button
-                            onClick={() => adjustQuantity(index, 1)}
-                            className="w-8 h-8 bg-green-500 hover:bg-green-600 rounded text-white font-bold"
-                          >
-                            +
-                          </button>
+                          {item.unitPrice && (
+                            <div className="text-sm text-slate-400 mt-1">@ ${item.unitPrice} each</div>
+                          )}
                         </div>
-                        {item.unitPrice && (
-                          <div className="text-sm text-slate-400">
-                            @ ${item.unitPrice}
+
+                        {/* Counting Buttons */}
+                        {!item.verified && (
+                          <div className="grid grid-cols-3 gap-2 mb-3">
+                            {/* Big +1 Button */}
+                            <button
+                              onClick={() => incrementCount(index)}
+                              className="col-span-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-6 px-4 rounded-xl text-2xl shadow-lg transform active:scale-95 transition-all"
+                            >
+                              +1
+                            </button>
+
+                            {/* Side buttons */}
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={() => decrementCount(index)}
+                                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg"
+                              >
+                                -1
+                              </button>
+                              <button
+                                onClick={() => resetCount(index)}
+                                className="flex-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg"
+                              >
+                                Reset
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Quick Action Buttons */}
+                        {!item.verified && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => finishCounting(index)}
+                              disabled={item.actualQty === 0}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:opacity-50 text-white text-sm py-2 px-4 rounded-lg"
+                            >
+                              Done Counting
+                            </button>
+                            <button
+                              onClick={() => markAs(index, 'missing')}
+                              className="bg-red-600 hover:bg-red-700 text-white text-sm py-2 px-4 rounded-lg"
+                            >
+                              Missing
+                            </button>
+                            <button
+                              onClick={() => markAs(index, 'damaged')}
+                              className="bg-gray-600 hover:bg-gray-700 text-white text-sm py-2 px-4 rounded-lg"
+                            >
+                              Damaged
+                            </button>
                           </div>
                         )}
                       </div>
-
-                      {/* Action Buttons */}
-                      {!item.verified && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => verifyItem(index)}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-4 rounded-lg"
-                          >
-                            ✓ Verify
-                          </button>
-                          <button
-                            onClick={() => markAs(index, 'missing')}
-                            className="bg-red-600 hover:bg-red-700 text-white text-sm py-2 px-4 rounded-lg"
-                          >
-                            Missing
-                          </button>
-                          <button
-                            onClick={() => markAs(index, 'damaged')}
-                            className="bg-gray-600 hover:bg-gray-700 text-white text-sm py-2 px-4 rounded-lg"
-                          >
-                            Damaged
-                          </button>
-                        </div>
-                      )}
 
                       {/* Notes */}
                       {item.verified && (
