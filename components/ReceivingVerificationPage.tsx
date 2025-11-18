@@ -101,11 +101,11 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
 
       const updated = { ...item, ...updates };
 
-      // Auto-determine status based on quantities
-      if (updates.actualQty !== undefined) {
+      // Auto-determine status based on quantities (but DON'T auto-verify)
+      if (updates.actualQty !== undefined && !updated.verified) {
         if (updated.actualQty === updated.expectedQty) {
           updated.status = 'match';
-          updated.verified = true; // Auto-verify when count matches
+          // DO NOT auto-verify - let user keep counting if there are more items
         } else if (updated.actualQty < updated.expectedQty) {
           updated.status = 'shortage';
         } else if (updated.actualQty > updated.expectedQty) {
