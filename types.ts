@@ -36,3 +36,23 @@ export interface User {
   companyName?: string;
   createdAt: any;
 }
+
+export interface ReceivingReportItem {
+  name: string;
+  expectedQty: number;
+  actualQty: number;
+  unitPrice?: number;
+  status: 'match' | 'shortage' | 'overage' | 'missing' | 'damaged' | 'pending';
+  notes: string;
+}
+
+export interface ReceivingReport {
+  id: string;
+  vendorName?: string;
+  invoiceNumber?: string;
+  items: ReceivingReportItem[];
+  totalItems: number;
+  matchedItems: number;
+  issueItems: number;
+  createdAt: any;
+}

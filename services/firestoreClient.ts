@@ -11,7 +11,7 @@ import {
   orderBy,
   Timestamp
 } from 'firebase/firestore';
-import type { InventoryItem, Invoice } from '../types';
+import type { InventoryItem, Invoice, ReceivingReport } from '../types';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -109,4 +109,27 @@ export async function getInvoices(): Promise<Invoice[]> {
     id: doc.id,
     ...doc.data()
   })) as Invoice[];
+}
+
+// Receiving Reports
+export async function addReceivingReport(report: Omit<ReceivingReport, 'id' | 'createdAt'>): Promise<string> {
+  if (!db) throw new Error('Firebase not configured');
+
+  const docRef = await addDoc(collection(db, 'receivingReports'), {
+    ...report,
+    createdAt: Timestamp.now()
+  });
+  return docRef.id;
+}
+
+export async function getReceivingReports(): Promise<ReceivingReport[]> {
+  if (!db) return [];
+
+  const q = query(collection(db, 'receivingReports'), orderBy('createdAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  })) as ReceivingReport[];
 }

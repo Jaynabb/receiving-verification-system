@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReceivingVerificationPage from './components/ReceivingVerificationPage';
-import InventoryListPage from './components/InventoryListPage';
+import DeliveryHistoryPage from './components/DeliveryHistoryPage';
 import type { InventoryItem } from './types';
 import { getInventoryItems } from './services/firestoreClient';
 
-type Page = 'receive-delivery' | 'view-inventory';
+type Page = 'receive-delivery' | 'delivery-history';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('receive-delivery');
@@ -50,14 +50,14 @@ const App: React.FC = () => {
               📦 Receive Delivery
             </button>
             <button
-              onClick={() => setCurrentPage('view-inventory')}
+              onClick={() => setCurrentPage('delivery-history')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                currentPage === 'view-inventory'
+                currentPage === 'delivery-history'
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               }`}
             >
-              📋 Inventory History ({inventory.length})
+              📋 Delivery History
             </button>
           </nav>
         </div>
@@ -74,8 +74,8 @@ const App: React.FC = () => {
             {currentPage === 'receive-delivery' && (
               <ReceivingVerificationPage inventory={inventory} />
             )}
-            {currentPage === 'view-inventory' && (
-              <InventoryListPage inventory={inventory} onInventoryUpdated={handleInventoryUpdated} />
+            {currentPage === 'delivery-history' && (
+              <DeliveryHistoryPage />
             )}
           </>
         )}

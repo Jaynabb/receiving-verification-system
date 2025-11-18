@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { convertPdfToImages } from '../services/pdfHelper';
 import { analyzeInvoicePhoto } from '../services/geminiService';
+import { addReceivingReport } from '../services/firestoreClient';
 import type { InventoryItem } from '../types';
 
 interface VerificationItem {
@@ -503,10 +504,26 @@ const ReceivingVerificationPage: React.FC<Props> = ({ inventory }) => {
             {/* Actions */}
             <div className="flex gap-4">
               <button
-                onClick={() => {
-                  // TODO: Save report to database
-                  alert('Report saved! (Database integration needed)');
-                  resetScan();
+                onClick={async () => {
+                  try {
+                    await addReceivingReport({
+                      items: items.map(item => ({
+                        name: item.name,
+                        expectedQty: item.expectedQty,
+                        actualQty: item.actualQty,
+                        unitPrice: item.unitPrice,
+                        status: item.status,
+                        notes: item.notes
+                      })),
+                      totalItems: items.length,
+                      matchedItems: stats.matched,
+                      issueItems: stats.issues
+                    });
+                    alert('Delivery report saved successfully!');
+                    resetScan();
+                  } catch (error: any) {
+                    alert('Failed to save report: ' + error.message);
+                  }
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
               >
